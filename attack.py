@@ -65,7 +65,7 @@ def attack_success(x, img, target_calss, net, targeted_attack=False, verbose=Fal
 	predicted_class = np.argmax(confidence)
 
 	if (verbose):
-		print "Confidence: %.4f"%confidence[target_calss]
+		print("Confidence: %.4f"%confidence[target_calss])
 	if (targeted_attack and predicted_class == target_calss) or (not targeted_attack and predicted_class != target_calss):
 		return True
 
@@ -142,8 +142,8 @@ def attack_all(net, loader, pixels=1, targeted=False, maxiter=75, popsize=400, v
 				success_rate = float(success)/correct
 
 			if flag == 1:
-				print "success rate: %.4f (%d/%d) [(x,y) = (%d,%d) and (R,G,B)=(%d,%d,%d)]"%(
-					success_rate, success, correct, x[0],x[1],x[2],x[3],x[4])
+				print( "success rate: %.4f (%d/%d) [(x,y) = (%d,%d) and (R,G,B)=(%d,%d,%d)]"%(
+					success_rate, success, correct, x[0],x[1],x[2],x[3],x[4]))
 		
 		if correct == args.samples:
 			break
@@ -152,7 +152,7 @@ def attack_all(net, loader, pixels=1, targeted=False, maxiter=75, popsize=400, v
 
 def main():
 
-	print "==> Loading data and model..."
+	print("==> Loading data and model...")
 	tranfrom_test = transforms.Compose([
 		transforms.ToTensor(),
 		transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
@@ -167,10 +167,10 @@ def main():
 	net.cuda()
 	cudnn.benchmark = True
 
-	print "==> Starting attck..."
+	print("==> Starting attck...")
 
 	results = attack_all(net, testloader, pixels=args.pixels, targeted=args.targeted, maxiter=args.maxiter, popsize=args.popsize, verbose=args.verbose)
-	print "Final success rate: %.4f"%results
+	print("Final success rate: %.4f"%results)
 
 
 if __name__ == '__main__':
