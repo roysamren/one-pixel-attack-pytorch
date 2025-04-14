@@ -8,6 +8,7 @@ from scipy.optimize import OptimizeResult, minimize
 #from scipy.optimize.optimize import _status_message
 from scipy._lib._util import check_random_state
 import warnings
+np.float_ = np.float64
 _status_message = {
     'success': 'Optimization terminated successfully.',
     'maxiter': 'Maximum number of iterations has been exceeded.',
