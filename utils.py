@@ -1,67 +1,75 @@
 '''Some helper functions for PyTorch, including:
     - get_mean_and_std: calculate the mean and std value of dataset.
-    - msr_init: net parameter initialization.
+    - init_params: net parameter initialization.
     - progress_bar: progress bar mimic xlua.progress.
 '''
 import os
 import sys
 import time
 import math
-
+import torch
 import torch.nn as nn
 import torch.nn.init as init
 
 
 def get_mean_and_std(dataset):
-    '''Compute the mean and std value of dataset.'''
+    '''Compute the mean and std value of a dataset.'''
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=2)
     mean = torch.zeros(3)
     std = torch.zeros(3)
     print('==> Computing mean and std..')
-    for inputs, targets in dataloader:
+    for inputs, _ in dataloader:
         for i in range(3):
-            mean[i] += inputs[:,i,:,:].mean()
-            std[i] += inputs[:,i,:,:].std()
+            mean[i] += inputs[:, i, :, :].mean()
+            std[i] += inputs[:, i, :, :].std()
     mean.div_(len(dataset))
     std.div_(len(dataset))
     return mean, std
 
+
 def init_params(net):
-    '''Init layer parameters.'''
+    '''Init layer parameters (Conv2d, BatchNorm2d, Linear).'''
     for m in net.modules():
         if isinstance(m, nn.Conv2d):
-            init.kaiming_normal(m.weight, mode='fan_out')
-            if m.bias:
-                init.constant(m.bias, 0)
+            init.kaiming_normal_(m.weight, mode='fan_out')  # underscore version
+            if m.bias is not None:
+                init.constant_(m.bias, 0)
         elif isinstance(m, nn.BatchNorm2d):
-            init.constant(m.weight, 1)
-            init.constant(m.bias, 0)
+            init.constant_(m.weight, 1)
+            init.constant_(m.bias, 0)
         elif isinstance(m, nn.Linear):
-            init.normal(m.weight, std=1e-3)
-            if m.bias:
-                init.constant(m.bias, 0)
+            init.normal_(m.weight, std=1e-3)
+            if m.bias is not None:
+                init.constant_(m.bias, 0)
 
 
-_, term_width = os.popen('stty size', 'r').read().split()
-term_width = int(term_width)
+# Attempt to get terminal width, fallback if it fails
+try:
+    rows, term_width_str = os.popen('stty size', 'r').read().split()
+    term_width = int(term_width_str)
+except:
+    term_width = 80
 
 TOTAL_BAR_LENGTH = 65.
 last_time = time.time()
 begin_time = last_time
+
+
 def progress_bar(current, total, msg=None):
+    """
+    A simple progress bar to mimic xlua.progress from Torch.
+    """
     global last_time, begin_time
     if current == 0:
-        begin_time = time.time()  # Reset for new bar.
+        begin_time = time.time()
 
-    cur_len = int(TOTAL_BAR_LENGTH*current/total)
+    cur_len = int(TOTAL_BAR_LENGTH * current / total)
     rest_len = int(TOTAL_BAR_LENGTH - cur_len) - 1
 
     sys.stdout.write(' [')
-    for i in range(cur_len):
-        sys.stdout.write('=')
+    sys.stdout.write('=' * cur_len)
     sys.stdout.write('>')
-    for i in range(rest_len):
-        sys.stdout.write('.')
+    sys.stdout.write('.' * rest_len)
     sys.stdout.write(']')
 
     cur_time = time.time()
@@ -74,33 +82,36 @@ def progress_bar(current, total, msg=None):
     L.append(' | Tot: %s' % format_time(tot_time))
     if msg:
         L.append(' | ' + msg)
+    msg_str = ''.join(L)
+    sys.stdout.write(msg_str)
 
-    msg = ''.join(L)
-    sys.stdout.write(msg)
-    for i in range(term_width-int(TOTAL_BAR_LENGTH)-len(msg)-3):
-        sys.stdout.write(' ')
+    # Fill the remaining width with spaces
+    remaining = term_width - int(TOTAL_BAR_LENGTH) - len(msg_str) - 3
+    if remaining > 0:
+        sys.stdout.write(' ' * remaining)
 
-    # Go back to the center of the bar.
-    for i in range(term_width-int(TOTAL_BAR_LENGTH/2)+2):
+    # Move back to center
+    back_len = term_width - int(TOTAL_BAR_LENGTH / 2) + 2
+    for _ in range(back_len):
         sys.stdout.write('\b')
-    sys.stdout.write(' %d/%d ' % (current+1, total))
 
-    if current < total-1:
+    sys.stdout.write(' %d/%d ' % (current + 1, total))
+
+    if current < total - 1:
         sys.stdout.write('\r')
     else:
         sys.stdout.write('\n')
     sys.stdout.flush()
 
+
 def format_time(seconds):
-    days = int(seconds / 3600/24)
-    seconds = seconds - days*3600*24
-    hours = int(seconds / 3600)
-    seconds = seconds - hours*3600
-    minutes = int(seconds / 60)
-    seconds = seconds - minutes*60
-    secondsf = int(seconds)
-    seconds = seconds - secondsf
-    millis = int(seconds*1000)
+    days = int(seconds // 3600 // 24)
+    seconds = seconds - days * 3600 * 24
+    hours = int(seconds // 3600)
+    seconds = seconds - hours * 3600
+    minutes = int(seconds // 60)
+    secondsf = int(seconds - minutes * 60)
+    millis = int((seconds - secondsf) * 1000)
 
     f = ''
     i = 1
