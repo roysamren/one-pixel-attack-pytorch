@@ -1,0 +1,1 @@
+$ srun -A bcnx-delta-gpu --time=02:00:00 --nodes=1 --ntasks-per-node=32 --partition=gpuA40x4 --gpus=1 --mem=16g --pty /bin/bash
