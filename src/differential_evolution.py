@@ -160,7 +160,7 @@ class DifferentialEvolutionSolver(object):
         self._nfev = 0
 
     def init_population_array(self, init):
-        popn = np.asfarray(init)
+        popn = np.asarray(init)
         if (popn.shape[0] < 5 or popn.shape[1] != self.parameter_count or len(popn.shape) != 2):
             raise ValueError("Population shape must be (M, N) with M>4, N=#params")
         self.population = np.clip(self._unscale_parameters(popn), 0, 1)
